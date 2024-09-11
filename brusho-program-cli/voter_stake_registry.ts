@@ -71,6 +71,11 @@ export type VoterStakeRegistry = {
           "isSigner": false
         },
         {
+          "name": "maxVoterWeightRecord",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "realm",
           "isMut": false,
           "isSigner": false,
@@ -141,6 +146,10 @@ export type VoterStakeRegistry = {
           "type": "u8"
         },
         {
+          "name": "maxVoterWeightRecordBump",
+          "type": "u8"
+        },
+        {
           "name": "votingConfig",
           "type": {
             "defined": "VotingConfig"
@@ -153,8 +162,10 @@ export type VoterStakeRegistry = {
           }
         },
         {
-          "name": "circuitBreakerThreshold",
-          "type": "u64"
+          "name": "circuitBreakerConfig",
+          "type": {
+            "defined": "WindowedCircuitBreakerConfigV0"
+          }
         }
       ]
     },
@@ -427,8 +438,8 @@ export type VoterStakeRegistry = {
           ]
         },
         {
-          "name": "maxVoteWeightRecord",
-          "isMut": false,
+          "name": "maxVoterWeightRecord",
+          "isMut": true,
           "isSigner": false
         }
       ],
@@ -651,7 +662,14 @@ export type VoterStakeRegistry = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "amount",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
     },
     {
       "name": "logVoterInfo",
@@ -698,7 +716,7 @@ export type VoterStakeRegistry = {
           {
             "name": "votingConfig",
             "docs": [
-              "Storage for voting configuration: voting_config + reserved2."
+              "Storage for voting configuration: voting_config + reserved1."
             ],
             "type": {
               "defined": "VotingConfig"
@@ -708,15 +726,15 @@ export type VoterStakeRegistry = {
             "name": "reserved1",
             "type": {
               "array": [
-                "u8",
-                40
+                "u64",
+                5
               ]
             }
           },
           {
             "name": "depositConfig",
             "docs": [
-              "Storage for deposit configuration: deposit_config + reserved3."
+              "Storage for deposit configuration: deposit_config + reserved2."
             ],
             "type": {
               "defined": "DepositConfig"
@@ -726,16 +744,14 @@ export type VoterStakeRegistry = {
             "name": "reserved2",
             "type": {
               "array": [
-                "u8",
-                40
+                "u64",
+                5
               ]
             }
           },
           {
             "name": "currentRewardAmountPerSecond",
-            "type": {
-              "defined": "Exponential"
-            }
+            "type": "u128"
           },
           {
             "name": "lastRewardAmountPerSecondRotatedTs",
@@ -756,9 +772,7 @@ export type VoterStakeRegistry = {
             "docs": [
               "Accumulator of the total earned rewards rate since the opening"
             ],
-            "type": {
-              "defined": "Exponential"
-            }
+            "type": "u128"
           },
           {
             "name": "issuedRewardAmount",
@@ -787,11 +801,24 @@ export type VoterStakeRegistry = {
             "type": "u8"
           },
           {
+            "name": "maxVoterWeightRecordBump",
+            "type": "u8"
+          },
+          {
             "name": "reserved3",
             "type": {
               "array": [
                 "u8",
-                55
+                14
+              ]
+            }
+          },
+          {
+            "name": "reserved4",
+            "type": {
+              "array": [
+                "u64",
+                9
               ]
             }
           }
@@ -821,7 +848,7 @@ export type VoterStakeRegistry = {
                 {
                   "defined": "DepositEntry"
                 },
-                10
+                16
               ]
             }
           },
@@ -830,9 +857,7 @@ export type VoterStakeRegistry = {
             "docs": [
               "Global reward_index as of the most recent balance-changing action"
             ],
-            "type": {
-              "defined": "Exponential"
-            }
+            "type": "u128"
           },
           {
             "name": "rewardClaimableAmount",
@@ -850,11 +875,20 @@ export type VoterStakeRegistry = {
             "type": "u8"
           },
           {
-            "name": "reserved",
+            "name": "reserved1",
             "type": {
               "array": [
                 "u8",
-                70
+                6
+              ]
+            }
+          },
+          {
+            "name": "reserved2",
+            "type": {
+              "array": [
+                "u64",
+                8
               ]
             }
           }
@@ -863,6 +897,28 @@ export type VoterStakeRegistry = {
     }
   ],
   "types": [
+    {
+      "name": "WindowedCircuitBreakerConfigV0",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "windowSizeSeconds",
+            "type": "u64"
+          },
+          {
+            "name": "thresholdType",
+            "type": {
+              "defined": "ThresholdType"
+            }
+          },
+          {
+            "name": "threshold",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "DepositEntryInfo",
       "type": {
@@ -982,14 +1038,23 @@ export type VoterStakeRegistry = {
           },
           {
             "name": "isActive",
-            "type": "bool"
+            "type": "u8"
           },
           {
-            "name": "reserved",
+            "name": "reserved1",
             "type": {
               "array": [
                 "u8",
-                23
+                7
+              ]
+            }
+          },
+          {
+            "name": "reserved2",
+            "type": {
+              "array": [
+                "u64",
+                4
               ]
             }
           }
@@ -1027,18 +1092,56 @@ export type VoterStakeRegistry = {
       }
     },
     {
+      "name": "LockupKind",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "duration",
+            "type": {
+              "defined": "LockupTimeDuration"
+            }
+          },
+          {
+            "name": "kind",
+            "type": {
+              "defined": "LockupKindKind"
+            }
+          },
+          {
+            "name": "filler",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "LockupTimeDuration",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "periods",
-            "type": "u32"
+            "type": "u64"
           },
           {
             "name": "unit",
             "type": {
               "defined": "LockupTimeUnit"
+            }
+          },
+          {
+            "name": "filler",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
             }
           }
         ]
@@ -1094,83 +1197,59 @@ export type VoterStakeRegistry = {
         "fields": [
           {
             "name": "ordinaryDepositMinLockupDuration",
+            "docs": [
+              "The minimal lock up duration for ordinary deposit."
+            ],
             "type": {
               "defined": "LockupTimeDuration"
             }
           },
           {
             "name": "nodeDepositLockupDuration",
+            "docs": [
+              "The lock up duration for node deposit."
+            ],
             "type": {
               "defined": "LockupTimeDuration"
             }
           },
           {
             "name": "nodeSecurityDeposit",
+            "docs": [
+              "Specific amount for node deposit."
+            ],
             "type": "u64"
           }
         ]
       }
     },
     {
-      "name": "RewardConfig",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "ordinaryDepositMinLockupDuration",
-            "type": {
-              "defined": "LockupTimeDuration"
-            }
-          },
-          {
-            "name": "nodeDepositLockupDuration",
-            "type": {
-              "defined": "LockupTimeDuration"
-            }
-          },
-          {
-            "name": "nodeSecurityDeposit",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Exponential",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "v",
-            "type": "u128"
-          }
-        ]
-      }
-    },
-    {
-      "name": "LockupKind",
+      "name": "ThresholdType",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Daily",
-            "fields": [
-              "u32"
-            ]
+            "name": "Percent"
           },
           {
-            "name": "Monthly",
-            "fields": [
-              "u32"
-            ]
+            "name": "Absolute"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LockupKindKind",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Daily"
           },
           {
-            "name": "Constant",
-            "fields": [
-              {
-                "defined": "LockupTimeDuration"
-              }
-            ]
+            "name": "Monthly"
+          },
+          {
+            "name": "Constant"
           }
         ]
       }
@@ -1479,6 +1558,11 @@ export type VoterStakeRegistry = {
     {
       "code": 6025,
       "name": "InvalidLockupDuration",
+      "msg": ""
+    },
+    {
+      "code": 6026,
+      "name": "InsufficientClaimableRewards",
       "msg": ""
     }
   ]
@@ -1557,6 +1641,11 @@ export const IDL: VoterStakeRegistry = {
           "isSigner": false
         },
         {
+          "name": "maxVoterWeightRecord",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "realm",
           "isMut": false,
           "isSigner": false,
@@ -1627,6 +1716,10 @@ export const IDL: VoterStakeRegistry = {
           "type": "u8"
         },
         {
+          "name": "maxVoterWeightRecordBump",
+          "type": "u8"
+        },
+        {
           "name": "votingConfig",
           "type": {
             "defined": "VotingConfig"
@@ -1639,8 +1732,10 @@ export const IDL: VoterStakeRegistry = {
           }
         },
         {
-          "name": "circuitBreakerThreshold",
-          "type": "u64"
+          "name": "circuitBreakerConfig",
+          "type": {
+            "defined": "WindowedCircuitBreakerConfigV0"
+          }
         }
       ]
     },
@@ -1913,8 +2008,8 @@ export const IDL: VoterStakeRegistry = {
           ]
         },
         {
-          "name": "maxVoteWeightRecord",
-          "isMut": false,
+          "name": "maxVoterWeightRecord",
+          "isMut": true,
           "isSigner": false
         }
       ],
@@ -2137,7 +2232,14 @@ export const IDL: VoterStakeRegistry = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "amount",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
     },
     {
       "name": "logVoterInfo",
@@ -2184,7 +2286,7 @@ export const IDL: VoterStakeRegistry = {
           {
             "name": "votingConfig",
             "docs": [
-              "Storage for voting configuration: voting_config + reserved2."
+              "Storage for voting configuration: voting_config + reserved1."
             ],
             "type": {
               "defined": "VotingConfig"
@@ -2194,15 +2296,15 @@ export const IDL: VoterStakeRegistry = {
             "name": "reserved1",
             "type": {
               "array": [
-                "u8",
-                40
+                "u64",
+                5
               ]
             }
           },
           {
             "name": "depositConfig",
             "docs": [
-              "Storage for deposit configuration: deposit_config + reserved3."
+              "Storage for deposit configuration: deposit_config + reserved2."
             ],
             "type": {
               "defined": "DepositConfig"
@@ -2212,16 +2314,14 @@ export const IDL: VoterStakeRegistry = {
             "name": "reserved2",
             "type": {
               "array": [
-                "u8",
-                40
+                "u64",
+                5
               ]
             }
           },
           {
             "name": "currentRewardAmountPerSecond",
-            "type": {
-              "defined": "Exponential"
-            }
+            "type": "u128"
           },
           {
             "name": "lastRewardAmountPerSecondRotatedTs",
@@ -2242,9 +2342,7 @@ export const IDL: VoterStakeRegistry = {
             "docs": [
               "Accumulator of the total earned rewards rate since the opening"
             ],
-            "type": {
-              "defined": "Exponential"
-            }
+            "type": "u128"
           },
           {
             "name": "issuedRewardAmount",
@@ -2273,11 +2371,24 @@ export const IDL: VoterStakeRegistry = {
             "type": "u8"
           },
           {
+            "name": "maxVoterWeightRecordBump",
+            "type": "u8"
+          },
+          {
             "name": "reserved3",
             "type": {
               "array": [
                 "u8",
-                55
+                14
+              ]
+            }
+          },
+          {
+            "name": "reserved4",
+            "type": {
+              "array": [
+                "u64",
+                9
               ]
             }
           }
@@ -2307,7 +2418,7 @@ export const IDL: VoterStakeRegistry = {
                 {
                   "defined": "DepositEntry"
                 },
-                10
+                16
               ]
             }
           },
@@ -2316,9 +2427,7 @@ export const IDL: VoterStakeRegistry = {
             "docs": [
               "Global reward_index as of the most recent balance-changing action"
             ],
-            "type": {
-              "defined": "Exponential"
-            }
+            "type": "u128"
           },
           {
             "name": "rewardClaimableAmount",
@@ -2336,11 +2445,20 @@ export const IDL: VoterStakeRegistry = {
             "type": "u8"
           },
           {
-            "name": "reserved",
+            "name": "reserved1",
             "type": {
               "array": [
                 "u8",
-                70
+                6
+              ]
+            }
+          },
+          {
+            "name": "reserved2",
+            "type": {
+              "array": [
+                "u64",
+                8
               ]
             }
           }
@@ -2349,6 +2467,28 @@ export const IDL: VoterStakeRegistry = {
     }
   ],
   "types": [
+    {
+      "name": "WindowedCircuitBreakerConfigV0",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "windowSizeSeconds",
+            "type": "u64"
+          },
+          {
+            "name": "thresholdType",
+            "type": {
+              "defined": "ThresholdType"
+            }
+          },
+          {
+            "name": "threshold",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "DepositEntryInfo",
       "type": {
@@ -2468,14 +2608,23 @@ export const IDL: VoterStakeRegistry = {
           },
           {
             "name": "isActive",
-            "type": "bool"
+            "type": "u8"
           },
           {
-            "name": "reserved",
+            "name": "reserved1",
             "type": {
               "array": [
                 "u8",
-                23
+                7
+              ]
+            }
+          },
+          {
+            "name": "reserved2",
+            "type": {
+              "array": [
+                "u64",
+                4
               ]
             }
           }
@@ -2513,18 +2662,56 @@ export const IDL: VoterStakeRegistry = {
       }
     },
     {
+      "name": "LockupKind",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "duration",
+            "type": {
+              "defined": "LockupTimeDuration"
+            }
+          },
+          {
+            "name": "kind",
+            "type": {
+              "defined": "LockupKindKind"
+            }
+          },
+          {
+            "name": "filler",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "LockupTimeDuration",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "periods",
-            "type": "u32"
+            "type": "u64"
           },
           {
             "name": "unit",
             "type": {
               "defined": "LockupTimeUnit"
+            }
+          },
+          {
+            "name": "filler",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
             }
           }
         ]
@@ -2580,83 +2767,59 @@ export const IDL: VoterStakeRegistry = {
         "fields": [
           {
             "name": "ordinaryDepositMinLockupDuration",
+            "docs": [
+              "The minimal lock up duration for ordinary deposit."
+            ],
             "type": {
               "defined": "LockupTimeDuration"
             }
           },
           {
             "name": "nodeDepositLockupDuration",
+            "docs": [
+              "The lock up duration for node deposit."
+            ],
             "type": {
               "defined": "LockupTimeDuration"
             }
           },
           {
             "name": "nodeSecurityDeposit",
+            "docs": [
+              "Specific amount for node deposit."
+            ],
             "type": "u64"
           }
         ]
       }
     },
     {
-      "name": "RewardConfig",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "ordinaryDepositMinLockupDuration",
-            "type": {
-              "defined": "LockupTimeDuration"
-            }
-          },
-          {
-            "name": "nodeDepositLockupDuration",
-            "type": {
-              "defined": "LockupTimeDuration"
-            }
-          },
-          {
-            "name": "nodeSecurityDeposit",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Exponential",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "v",
-            "type": "u128"
-          }
-        ]
-      }
-    },
-    {
-      "name": "LockupKind",
+      "name": "ThresholdType",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Daily",
-            "fields": [
-              "u32"
-            ]
+            "name": "Percent"
           },
           {
-            "name": "Monthly",
-            "fields": [
-              "u32"
-            ]
+            "name": "Absolute"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LockupKindKind",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Daily"
           },
           {
-            "name": "Constant",
-            "fields": [
-              {
-                "defined": "LockupTimeDuration"
-              }
-            ]
+            "name": "Monthly"
+          },
+          {
+            "name": "Constant"
           }
         ]
       }
@@ -2965,6 +3128,11 @@ export const IDL: VoterStakeRegistry = {
     {
       "code": 6025,
       "name": "InvalidLockupDuration",
+      "msg": ""
+    },
+    {
+      "code": 6026,
+      "name": "InsufficientClaimableRewards",
       "msg": ""
     }
   ]
